@@ -1,10 +1,10 @@
+import numpy
+
 def Rate_of_Price_Spread(data): #漲跌幅：((今日收盤價-前日收盤價)/前日收盤價)%
     data['rate_of_price_spread'] = round((((data['Close'] - data['Close'].shift(1)) / data['Close'].shift(1))) * 100, 2)
-
 def MA(data, days): #MA(Moving Average, 移動平均線):n天收盤價的平均值 
     column_name = 'MA_{0}'.format(days)
     data[column_name] = data['Close'].rolling(days).mean()
-
 
 def EMA(data, days): #EMA(Exponential Moving Average, 指數平滑移動平均線)
                      #今日EMA = 今日收盤價 * α + 昨日EMA * (1-α), α一般取2/(n+1)
@@ -60,6 +60,18 @@ def OBV(data): #OBV(On Balance Volume, 量能潮指標), 依照行情的漲跌�
             data['OBV'][i] = data['OBV'][i-1]
 
 def ATR(data, days): #ATR(Average True Range, 真實波動幅度均值) 首先要計算真實波動幅度, 之後再其結果進行移動平均
-               #當前K線的真實波動幅度為下方三者的最大值
-    data['TR'] = max((data['High'] - data['Low']), (abs(data['Close'].shift(1) - data['High'])), (abs(data['Close'].shift(1) - data['Low'])))
+                     #波動幅度則是以下面三者中的最大者為準：
+                     #1.當天最高點和最低點間的距離
+                     #2.前一天收盤價和當天最高價間的距離
+                     #3.前一天收盤價和當天最低價間的距離
+    for i in range(0, len(data)):
+        data.loc[data.index[i], 'TR'] = max((data['High'][i] - data['Low'][i]), (data['Close'].shift(1)[i] - data['High'][i]), (data['Close'].shift(1)[i] - data['Low'][i]))
+    
     data['ATR'] = data['TR'].rolling(days).mean()
+
+def Aroon(data, days): #Arron oscillator(阿隆指標), 主要用途是來判斷趨勢的新生, 方向與強度
+                       #這個技術指標中包括兩根線：Aroon-up(多方)和Aroon-down(空方)
+                       #Aroon-up= ((n-n天內最高價發生日到今天的天數)/n) *100
+                       #Aroon-down= ((n-n天內最低價發生日到今天的天數)/n) *100
+    data['Aroon_up'] = 100 * data['High'].rolling(days).apply(lambda x: x.argmax()) / days
+    data['Aroon_down'] = 100 * data['Low'].rolling(days).apply(lambda x: x.argmin()) / days
