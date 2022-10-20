@@ -1,4 +1,5 @@
 import numpy
+import pandas as pd
 
 def Rate_of_Price_Spread(data): #漲跌幅：((今日收盤價-前日收盤價)/前日收盤價)%
     data['rate_of_price_spread'] = round((((data['Close'] - data['Close'].shift(1)) / data['Close'].shift(1))) * 100, 2)
@@ -24,7 +25,7 @@ def RSI(data, days, adjust=False): #RSI(Related Strength Index, 相對強弱指�
 
     data['RSI'] = 100 - 100 / (1 + price_raise_ewm / price_fall_ewm)
 
-def KDJ(data, days): #隨機指標, K稱為快速指標, D稱為慢速指標
+def KDJ(data, days): #Stochastic Oscillator(隨機指標), K稱為快速指標, D稱為慢速指標, J為KD值的乖離程度
     #先計算出RSV(Raw Stochastic Value, 未成熟隨機值)
     #RSV = (第n天的收盤價-最近n天內的最低價)/(最近n天內的最高價-最近n天內的最低價) *100
     low_list = data['Close'].rolling(days, min_periods = 1).min() #最低價
@@ -36,7 +37,6 @@ def KDJ(data, days): #隨機指標, K稱為快速指標, D稱為慢速指標
     #今天的K值 = 昨天的K值*(2/3) + 今天的RSV值*(1/3)
     #D值由K值的指數移動平均計算得到, 即前一日的D值和當前的K值經權重調整後相加得到
     #今天的D值 = 昨天的D值*(2/3) + 今天的K值*(1/3)
-    #J值標示了KD值的乖離程度
     #J = 3*K - 2*D
     data['K'] = rsv.ewm(com=2, adjust=False).mean()
     data['D'] = data['K'].ewm(com=2, adjust=False).mean()
@@ -75,3 +75,28 @@ def Aroon(data, days): #Arron oscillator(阿隆指標), 主要用途是來判斷
                        #Aroon-down= ((n-n天內最低價發生日到今天的天數)/n) *100
     data['Aroon_up'] = 100 * data['High'].rolling(days).apply(lambda x: x.argmax()) / days
     data['Aroon_down'] = 100 * data['Low'].rolling(days).apply(lambda x: x.argmin()) / days
+
+def CCI(data, days): #CCI(Channel Commodity Index, 順勢指標), CCI假設價格是有一定的週期性, 把價格與股價平均區間的偏離程度以正負值在圖表上展示
+                     #CCI=(TP-MA)/0.015 *MD
+                     #TP=(最高價+最低價+收盤價)/3
+                     #SMA=n日間的TP移動平均
+                     #MD=TP-MA的平均偏差
+    data['TP'] = (data['High'] + data['Low'] + data['Close']) / 3
+    data['TP_SMA'] = data['TP'].rolling(days).mean()
+    data['MAD'] = data['TP'].rolling(days).apply(lambda x: pd.Series(x).mad())
+    data['CCI'] = (data['TP'] - data['TP_SMA']) / (0.015 * data['MAD']) 
+
+def Bollinger(data, days): #B-Band(Bollinger Bands, 布林通道), 以中央的移動平均線加減兩個標準差（σ）所算出
+                           #布林通道"收窄"和"擴大"被當作是支撐位和阻力位的指標
+    MA(data, days) #先取平均移動線
+    column_name = 'MA_{0}'.format(days)
+    data['std'] = data['Close'].rolling(days).std() #取週期內收盤價的標準差
+    data['Upper_Bollinger'] = data[column_name] + data['std'] * 2
+    data['Lower_Bollinger'] = data[column_name] -   data['std'] * 2
+
+def Williams(data, days): #Williams%R(威廉指標), 利用當日收盤價判斷多空去向
+                          #Williams小於50時, 多方較強; Williams大於50時, 空方較強
+                          #Williams = (最近n天內的最高價-第n天的收盤價)/(最近n天內的最高價-最近n天內的最低價) *100
+    data['low_list'] = data['Close'].rolling(days, min_periods = 1).min() #最低價
+    data['high_list'] = data['High'].rolling(days, min_periods = 1).max() #最高價
+    data['Williams'] = ((data['high_list'] - data['Close']) / (data['high_list'] - data['low_list'])) * 100
