@@ -98,5 +98,19 @@ def Williams(data, days): #Williams%R(威廉指標), 利用當日收盤價判斷
                           #Williams小於50時, 多方較強; Williams大於50時, 空方較強
                           #Williams = (最近n天內的最高價-第n天的收盤價)/(最近n天內的最高價-最近n天內的最低價) *100
     data['low_list'] = data['Close'].rolling(days, min_periods = 1).min() #最低價
-    data['high_list'] = data['High'].rolling(days, min_periods = 1).max() #最高價
+    data['high_list'] = data['High'].rolling(days, min_periods = 1).max() #最高價   
     data['Williams'] = ((data['high_list'] - data['Close']) / (data['high_list'] - data['low_list'])) * 100
+
+def Donchian(data, days): #Donchian Channel(唐棋安通道) 上軌為過去一段時間內的最高價, 下軌為過去一段時間內的最低價
+                          #若股價超過上軌, 可能表示多頭較強勢, 所以產生買進訊號; 若股價低於下軌, 可能表示空頭較強勢, 所以產生賣出訊號
+    data['Don_up'] = data['High'].rolling(days).max()
+    data['Don_low'] = data['Low'].rolling(days).min()
+
+def VWAP(data, days): #VWAP(Volume Weight Average Price, 交易量加權平均價格) 衡量在指定期間依交易量加權的平均資產價格 
+                      #VWAP 可表示主導市場趨勢的跡象, 以及流動性的重要領域
+                      #加總每筆交易的交易價值 (價格乘以交易量)，然後除以總交易量。
+                      #VWAP = ∑ (典型價格 * 交易量) / ∑ 交易量
+                      #典型價格(TP) = (最高價 + 最低價 + 收盤價) / 3
+    data['TP'] = (data['High'] + data['Low'] + data['Close']) / 3
+    data['EV'] = data['TP'] * data['Volume'] 
+    data['VWAP'] = (data['EV'].rolling(days).sum()) / (data['Volume'].rolling(days).sum())
