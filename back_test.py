@@ -12,15 +12,23 @@ InteractiveShell.ast_node_interactivity = "all"
 
 money = 10000
 
-symbols = 'AAPL'    
+symbols = 'NVAX'    
 ticker = yf.Ticker(symbols)
 df = ticker.history(period='10y', interval='1d')
 
-RSI(df, 14)
+strategy_beta(df) #使用beta版策略
 hold = 0
-df['Buy&Sell'] = ""
 df['Hold'] = ""
-for i in range(3, len(df)):
+for i in range(0, len(df)):
+    if (df['Buy&Sell'])[i] == 'Buy' and money > 10 * (df['Open'])[i]: #如果適合買入且有餘額, 一次買入10股 
+        hold += 10
+        money -= 10 * (df['Open'])[i]
+        (df['Hold'])[i] = 'Buy in' #狀態更新
+    elif (df['Buy&Sell'])[i] == 'Sell' and hold >= 10: #如果適合賣出且有剩餘持股, 一次賣出10股 
+        hold -= 10
+        money += 10 * (df['Open'])[i]
+        (df['Hold'])[i] = 'Sold out' #狀態更新
+    '''
     #RSI連續3天小於50且連續上升3天, 則買入
     if (((df['RSI'])[i] < 50) and (df['RSI'])[i-1] < 50) and ((df['RSI'])[i-2] < 50) and (((df['RSI'])[i] > (df['RSI'])[i-1]) and (((df['RSI'])[i] > (df['RSI'])[i-1]))):
         (df['Buy&Sell'])[i] = 'Buy'
@@ -36,6 +44,7 @@ for i in range(3, len(df)):
             hold -= 10
             money += 10 * (df['Open'])[i]
             (df['Hold'])[i] = 'Sold out'
+    '''
 
 print(hold)
 print(money)
