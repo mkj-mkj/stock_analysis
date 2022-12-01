@@ -114,3 +114,8 @@ def VWAP(data, days): #VWAP(Volume Weight Average Price, 交易量加權平均�
     data['TP'] = (data['High'] + data['Low'] + data['Close']) / 3
     data['EV'] = data['TP'] * data['Volume'] 
     data['VWAP'] = (data['EV'].rolling(days).sum()) / (data['Volume'].rolling(days).sum())
+
+def MFI(data): #MIF(Money Flow Index, 資金流量指標)
+    TP = (data['High'] + data['Low'] + data['Close']) / 3
+    data['MoneyFlow'] = TP * data['Volume']
+       
