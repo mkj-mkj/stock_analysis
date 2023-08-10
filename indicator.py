@@ -48,7 +48,7 @@ def DIF(data): #DIF為離差值, 利用短期與長期的指數移動平均相�
 def MACD(data): #計算出DIF後, 再取DIF的移動平均, 就是MACD線
     data['MACD'] = data['DIF'].ewm(span=9).mean() #一般用 DIF 的 9日移動平均
 
-def OBV(data): #OBV(On Balance Volume, 量能潮指標), 依照行情的漲跌來累計市場上美日的成交量值        
+def OBV(data): #OBV(On Balance Volume, 量能潮指標), 依照行情的漲跌來累計市場上每日的成交量值        
     data['Volume_by_Hand'] = data['Volume'] / 1000000 #把單位換成萬手
     data['OBV'] = 0
     for i in range(1, len(data['Close'])): #從第二天開始
@@ -77,10 +77,8 @@ def Aroon(data, days): #Arron oscillator(阿隆指標), 主要用途是來判斷
     data['Aroon_down'] = 100 * data['Low'].rolling(days).apply(lambda x: x.argmin()) / days
 
 def CCI(data, days): #CCI(Channel Commodity Index, 順勢指標), CCI假設價格是有一定的週期性, 把價格與股價平均區間的偏離程度以正負值在圖表上展示
-                     #CCI=(TP-MA)/0.015 *MD
-                     #TP=(最高價+最低價+收盤價)/3
-                     #SMA=n日間的TP移動平均
-                     #MD=TP-MA的平均偏差
+                     #CCI=(TP-MA)/0.015 *MD     #TP=(最高價+最低價+收盤價)/3
+                     #SMA=n日間的TP移動平均      #MD=TP-MA的平均偏差
     data['TP'] = (data['High'] + data['Low'] + data['Close']) / 3
     data['TP_SMA'] = data['TP'].rolling(days).mean()
     data['MAD'] = data['TP'].rolling(days).apply(lambda x: pd.Series(x).mad())
@@ -97,8 +95,8 @@ def Bollinger(data, days): #B-Band(Bollinger Bands, 布林通道), 以中央的�
 def Williams(data, days): #Williams%R(威廉指標), 利用當日收盤價判斷多空去向
                           #Williams小於50時, 多方較強; Williams大於50時, 空方較強
                           #Williams = (最近n天內的最高價-第n天的收盤價)/(最近n天內的最高價-最近n天內的最低價) *100
-    data['low_list'] = data['Close'].rolling(days, min_periods = 1).min() #最低價
-    data['high_list'] = data['High'].rolling(days, min_periods = 1).max() #最高價   
+    data['low_list'] = data['Close'].rolling(days, min_periods = 1).min() #期間內最低價
+    data['high_list'] = data['High'].rolling(days, min_periods = 1).max() #期間內最高價   
     data['Williams'] = ((data['high_list'] - data['Close']) / (data['high_list'] - data['low_list'])) * 100
 
 def Donchian(data, days): #Donchian Channel(唐棋安通道) 上軌為過去一段時間內的最高價, 下軌為過去一段時間內的最低價
@@ -119,3 +117,4 @@ def MFI(data): #MIF(Money Flow Index, 資金流量指標)
     TP = (data['High'] + data['Low'] + data['Close']) / 3
     data['MoneyFlow'] = TP * data['Volume']
        
+#test
